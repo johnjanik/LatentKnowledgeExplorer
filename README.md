@@ -23,10 +23,26 @@ The Latent Knowledge Explorer (LKE) is a Python application that systematically 
 - macOS or Linux (Windows not supported)
 - 8GB RAM minimum (16GB recommended)
 
-### Quick Install
+### Quick Install (One-Liners)
 
+#### Ubuntu/Debian (recommended for CLI tools):
 ```bash
-pip install latent-knowledge-explorer
+pipx install git+https://github.com/johnjanik/LatentKnowledgeExplorer.git
+```
+
+#### With UV (fastest, cross-platform):
+```bash
+uv pip install --system git+https://github.com/johnjanik/LatentKnowledgeExplorer.git
+```
+
+#### macOS with Homebrew:
+```bash
+brew install --HEAD johnjanik/tap/lke
+```
+
+#### Traditional pip (requires virtual environment):
+```bash
+python3 -m pip install --user git+https://github.com/johnjanik/LatentKnowledgeExplorer.git
 ```
 
 ### Development Install
@@ -34,7 +50,7 @@ pip install latent-knowledge-explorer
 ```bash
 git clone https://github.com/johnjanik/LatentKnowledgeExplorer.git
 cd LatentKnowledgeExplorer
-pip install -e .
+uv pip install -e .  # or: python3 -m pip install -e .
 ```
 
 ### Provider-Specific Setup
