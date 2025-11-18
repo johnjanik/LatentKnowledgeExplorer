@@ -60,6 +60,41 @@ def configure(provider, api_key, model, ollama_host, cache_dir):
     if provider == 'ollama':
         config['ollama_host'] = ollama_host
 
+        # List available Ollama models and let user choose
+        if not model:
+            try:
+                from .interfaces.llm_interface import OllamaInterface
+                temp_ollama = OllamaInterface(host=ollama_host)
+                available_models = temp_ollama.list_models()
+
+                if available_models:
+                    click.echo("\nAvailable Ollama models:")
+                    for idx, m in enumerate(available_models, 1):
+                        click.echo(f"  {idx}. {m}")
+
+                    model_choice = click.prompt(
+                        '\nEnter model name or number from list above',
+                        type=str,
+                        default=available_models[0] if available_models else 'llama2'
+                    )
+
+                    # Check if user entered a number
+                    try:
+                        model_idx = int(model_choice) - 1
+                        if 0 <= model_idx < len(available_models):
+                            model = available_models[model_idx]
+                        else:
+                            model = model_choice
+                    except ValueError:
+                        model = model_choice
+                else:
+                    click.echo("\nNo Ollama models found. Please pull a model first:")
+                    click.echo("  ollama pull llama2")
+                    model = click.prompt('Enter model name to use', default='llama2')
+            except Exception as e:
+                click.echo(f"\nCouldn't list Ollama models: {e}")
+                model = click.prompt('Enter Ollama model name', default='llama2')
+
     if model:
         config['model'] = model
     else:
@@ -85,7 +120,13 @@ def configure(provider, api_key, model, ollama_host, cache_dir):
         if llm.validate_connection():
             click.echo("✓ Connection successful!")
         else:
-            click.echo("✗ Connection failed. Please check your settings.")
+            if provider == 'ollama':
+                click.echo("✗ Connection failed. Please check:")
+                click.echo(f"  - Ollama is running: ollama ps")
+                click.echo(f"  - Model '{config.get('model')}' is available: ollama list")
+                click.echo(f"  - Ollama host is correct: {config.get('ollama_host')}")
+            else:
+                click.echo("✗ Connection failed. Please check your settings.")
     except Exception as e:
         click.echo(f"✗ Error: {e}")
 
@@ -350,24 +391,43 @@ def interactive(domain_name):
 
 
 @cli.command()
-def check_ollama():
+@click.option('--host', default='http://localhost:11434',
+              help='Ollama host URL')
+def check_ollama(host):
     """Check Ollama installation and list available models."""
     try:
         from .interfaces.llm_interface import OllamaInterface
+        import requests
 
-        ollama = OllamaInterface()
-        if ollama.validate_connection():
-            click.echo("✓ Ollama is running")
+        click.echo(f"Checking Ollama at {host}...")
 
-            models = ollama.list_models()
-            if models:
-                click.echo("\nAvailable models:")
-                for model in models:
-                    click.echo(f"  - {model}")
+        # Check if Ollama is reachable
+        try:
+            response = requests.get(f"{host}/api/tags", timeout=5)
+            if response.status_code == 200:
+                click.echo("✓ Ollama is running")
+
+                models = response.json().get("models", [])
+                if models:
+                    click.echo(f"\nAvailable models ({len(models)}):")
+                    for model in models:
+                        name = model.get("name", "unknown")
+                        size_gb = model.get("size", 0) / (1024**3)
+                        click.echo(f"  - {name} ({size_gb:.1f} GB)")
+                else:
+                    click.echo("\nNo models installed. Run 'ollama pull <model>' to install one.")
+                    click.echo("Popular models: llama2, mistral, codellama, deepseek-r1")
             else:
-                click.echo("\nNo models installed. Run 'ollama pull <model>' to install one.")
-        else:
-            click.echo("✗ Ollama is not running. Start it with 'ollama serve'")
+                click.echo(f"✗ Ollama returned status code: {response.status_code}")
+        except requests.exceptions.ConnectionError:
+            click.echo(f"✗ Cannot connect to Ollama at {host}")
+            click.echo("  Make sure Ollama is running: ollama serve")
+        except requests.exceptions.Timeout:
+            click.echo(f"✗ Connection to Ollama timed out")
+
+    except ImportError as e:
+        click.echo(f"✗ Missing dependency: {e}")
+        click.echo("  Run: pip install requests")
     except Exception as e:
         click.echo(f"✗ Error checking Ollama: {e}")
 

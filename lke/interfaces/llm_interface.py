@@ -370,7 +370,17 @@ class OllamaInterface(LLMInterface):
 
             # Check if the specified model is available
             models = response.json().get("models", [])
-            model_names = [m.get("name", "").split(":")[0] for m in models]
+            if not models:
+                return False
+
+            # Build list of model names (both with and without tags)
+            model_names = []
+            for m in models:
+                name = m.get("name", "")
+                model_names.append(name)  # Full name with tag
+                if ":" in name:
+                    model_names.append(name.split(":")[0])  # Base name without tag
+
             return self.model in model_names
 
         except Exception:
