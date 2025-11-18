@@ -1,0 +1,531 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{bm}
+\usepackage{microtype}
+
+\title{Extracting Structured Understanding from Large Language Models}
+\author{}
+\date{}
+
+\begin{document}
+	
+	\maketitle
+	
+	\begin{abstract}
+		Large language models (LLMs) are trained on massive corpora of human-generated text, including scientific and technical literature. Although the training objective is purely statistical---next-token prediction---the resulting models exhibit non-trivial competence in many scientific domains. This suggests that the weights and internal activations of such models implicitly encode aspects of the underlying structure of the world that constrains scientific discourse.
+		
+		This document formulates, in a precise way, the hypothesis that LLMs contain latent representations corresponding to real-world mechanisms and structures, motivated by structural realism and representation learning. It proposes an operational notion of ``understanding'' in this context, outlines a research architecture for identifying and extracting such structure, and provides pseudocode for a generic Python system that interrogates LLMs and builds explicit, externalized models (graphs, axioms, causal structures) which can be further formalized and analyzed.
+	\end{abstract}
+	
+	\section{Language Models as Compressed Predictive Codes}
+	
+	Let $\mathcal{T}$ denote the space of token sequences in some language (or set of languages), and let $\mathcal{D}$ denote a large corpus of text, including scientific and technical material. A transformer-style LLM with parameters $\theta$ is trained to approximate the conditional distribution
+	\begin{equation}
+		p_\theta(t_{k} \mid t_1,\dots,t_{k-1}) \approx p_{\text{data}}(t_{k} \mid t_1,\dots,t_{k-1}),
+	\end{equation}
+	by minimizing a cross-entropy or negative log-likelihood objective over $\mathcal{D}$.
+	
+	Conceptually, $p_\theta$ is a compressed code of the empirical distribution of token sequences encountered during training. Because scientific and technological texts are constrained by regularities of the physical and social world (experiments, engineering constraints, interventions, etc.), the learned distribution must implicitly reflect those regularities whenever they are necessary for successful prediction.
+	
+	The internal computation of a transformer defines, at each layer $\ell$ and position $k$, a hidden state
+	\begin{equation}
+		h^{(\ell)}_k \in \mathbb{R}^d,
+	\end{equation}
+	which can be viewed as a point in a high-dimensional \emph{latent space}. Self-attention and feed-forward sublayers map previous hidden states to new ones, ultimately producing logits over the vocabulary.
+	
+	From the perspective of representation learning, the family of hidden states $\{h^{(\ell)}_k\}$ is an internal representation of the conditional structure of text. To the extent that text is shaped by real-world mechanisms, these representations are candidates for encoding aspects of those mechanisms in a distributed form.
+	
+	\section{Scientific Discourse and Real-World Structure}
+	
+	Scientific discourse is not an arbitrary collection of symbol sequences. It is tightly constrained by:
+	
+	\begin{itemize}[nosep]
+		\item empirical regularities and experimental outcomes,
+		\item engineering and technological constraints,
+		\item mathematical structures used to model phenomena,
+		\item communal norms of explanation, prediction, and control.
+	\end{itemize}
+	
+	Concepts and terms in scientific texts include:
+	\begin{itemize}[nosep]
+		\item directly referential entities (e.g.\ ``electron'', ``DNA'', ``neuron''),
+		\item operationally defined quantities (e.g.\ temperature as defined by a given instrument),
+		\item idealizations and effective constructs (e.g.\ ideal gas, infinite lattice),
+		\item historical or metaphorical remnants.
+	\end{itemize}
+	
+	The mapping from linguistic items to the world is therefore indirect and context-dependent. What tends to be more stable across theoretical and linguistic changes is \emph{structure}:
+	\begin{itemize}[nosep]
+		\item symmetries and invariants,
+		\item causal dependencies,
+		\item functional roles within systems,
+		\item mathematical relationships (differential equations, conservation laws, constraints).
+	\end{itemize}
+	
+	A structural-realist view suggests that what is most reliably ``pointed to'' by long-run scientific practice is this relational structure rather than the intrinsic nature of individual entities. If an LLM is trained on a large enough portion of such practice, its internal representations are likely to encode approximations to these structures, insofar as they are necessary for accurate prediction of scientific text.
+	
+	\section{Operational Notions of Understanding}
+	
+	To make the notion of ``understanding'' in an LLM precise and empirically tractable, we adopt an operational stance. At least three complementary notions are relevant.
+	
+	\subsection{Structural Understanding (Internal Mechanisms)}
+	
+	A model displays structural understanding of some domain $D$ if there exist:
+	\begin{itemize}[nosep]
+		\item identifiable latent variables (features, subspaces, attention patterns) whose behavior corresponds to well-defined concepts or quantities in $D$,
+		\item identifiable circuits (subgraphs of the computation) that implement recognizable algorithms or reasoning steps in $D$,
+	\end{itemize}
+	and these identifications can be validated by causal interventions:
+	\begin{itemize}[nosep]
+		\item ablating or modifying these variables changes behavior in predictable ways,
+		\item activation patching or counterfactual interventions produce controlled changes in outputs.
+	\end{itemize}
+	
+	\subsection{Behavioral Understanding (Task-Performance View)}
+	
+	A model displays behavioral understanding of $D$ if, when probed exclusively through its input-output behavior, it:
+	\begin{itemize}[nosep]
+		\item answers questions and solves problems in $D$ with high accuracy,
+		\item generalizes robustly to novel but structurally similar tasks,
+		\item maintains internal consistency under rephrasings and counterfactuals,
+		\item exhibits coherent explanatory and predictive behavior aligned with the underlying structure of $D$.
+	\end{itemize}
+	
+	This does not require any insight into internal representations; it is entirely defined by observable performance.
+	
+	\subsection{Extractable Knowledge (Explicit Representations)}
+	
+	A model's understanding of $D$ is \emph{extractable} if one can algorithmically derive from it an explicit representation of a theory or world-model for $D$, for example:
+	\begin{itemize}[nosep]
+		\item a knowledge graph of entities and relations,
+		\item a set of axioms and theorems in a formal system,
+		\item a causal graph or structural causal model,
+		\item a simulation model (differential equations, update rules).
+	\end{itemize}
+	This representation should be:
+	\begin{itemize}[nosep]
+		\item significantly more compact than the full LLM,
+		\item sufficient to reproduce key capabilities on tasks within $D$,
+		\item interpretable to human experts or analyzable by other systems.
+	\end{itemize}
+	
+	\section{Latent-Space Structural Realism Hypothesis}
+	
+	We now formalize a central working hypothesis.
+	
+	\medskip\noindent
+	\textbf{Hypothesis (Latent-Space Structural Realism; LSSR).}
+	\emph{
+		Let $D$ be a scientific domain whose practice is well-represented in the training corpus of a large language model $p_\theta$. Suppose that $D$ is governed by relatively stable underlying mechanisms and structures (e.g.\ laws of motion, genetic inheritance, chemical reaction networks). Then there exist latent features, subspaces, and circuits within $p_\theta$ whose causal functional roles are isomorphic, in an appropriate sense, to aspects of these mechanisms and structures.
+	}
+	
+	This hypothesis is not about a one-to-one mapping between individual neurons and real-world objects, but about the existence of internal representations whose \emph{geometry} and \emph{causal role} correspond to structural properties of the world required to predict scientific text.
+	
+	For LSSR to have empirical content, at least two conditions must be satisfied.
+	
+	\subsection{Cross-Corpus Invariance}
+	
+	Consider multiple LLMs trained on different but overlapping corpora that describe the same domain $D$:
+	\begin{itemize}[nosep]
+		\item different natural languages,
+		\item different mixtures of textbooks, research articles, and code,
+		\item different institutional and stylistic conventions.
+	\end{itemize}
+	If all these models exhibit internal features or subspaces that can be aligned (up to invertible transformations) and that participate in analogous computations when solving problems in $D$, then these internal structures are strong candidates for representations of domain-level regularities rather than artifacts of any particular corpus.
+	
+	\subsection{Causal Interpretability and Intervention}
+	
+	For a putative internal representation $z$ to count as encoding some mechanism $M$ in $D$, the following should hold:
+	\begin{itemize}[nosep]
+		\item \emph{Decodability:} $z$ is predictive of relevant quantities associated with $M$ across many contexts (linear or simple nonlinear probes suffice).
+		\item \emph{Causal relevance:} modifying $z$ (e.g.\ via activation editing) causes systematic and interpretable changes in the model's outputs regarding $M$ while leaving unrelated behavior largely intact.
+		\item \emph{Stability:} the relationship between $z$ and $M$ persists across a range of inputs, prompts, and tasks within $D$.
+	\end{itemize}
+	
+	Under these conditions, it is meaningful to say that the model's latent space contains a representation of $M$ in the sense relevant for LSSR.
+	
+	\section{Research Architecture for Extracting Understanding}
+	
+	To make LSSR testable and to extract explicit models of domains from LLMs, we outline a modular research architecture.
+	
+	\subsection{Step 1: Domain Selection and Ground-Truth Theories}
+	
+	Choose a domain $D$ with:
+	\begin{itemize}[nosep]
+		\item a reasonably well-understood formal theory (e.g.\ Newtonian mechanics, Mendelian genetics, basic chemical kinetics),
+		\item a significant footprint in the training corpus (textbooks, problem sets, research articles).
+	\end{itemize}
+	
+	Let $\mathcal{M}_D$ denote an explicit, externalized model of the domain: a set of equations, axioms, causal graphs, or other formal structures specified independently of any LLM.
+	
+	\subsection{Step 2: Behavioral Extraction via Interrogation}
+	
+	Treat the LLM as an oracle and interrogate it to extract an explicit approximation $\hat{\mathcal{M}}_D$ of $\mathcal{M}_D$.
+	
+	Design prompt families that elicit:
+	\begin{itemize}[nosep]
+		\item \emph{Concept inventories:} lists of key entities, quantities, and concepts in $D$.
+		\item \emph{Prerequisite relations:} which concepts depend on which others.
+		\item \emph{Causal structures:} variables and their causal dependencies, including interventions and counterfactuals.
+		\item \emph{Axioms and laws:} candidate minimal sets of principles from which others can be derived.
+	\end{itemize}
+	
+	Aggregate multiple runs with paraphrased prompts and sampling schemes, then post-process the raw textual responses into:
+	\begin{itemize}[nosep]
+		\item a concept graph (nodes as concepts, edges as prerequisite or definitional relations),
+		\item a causal graph or set of structural equations,
+		\item a corpus of axioms, laws, and example derivations.
+	\end{itemize}
+	
+	This yields a structured object $\hat{\mathcal{M}}_D$ that can be stored (e.g.\ as JSON, a graph database, or input to a proof assistant).
+	
+	\subsection{Step 3: Mechanistic Extraction via Probing and Circuits}
+	
+	For an open-source LLM (or local model) with accessible internal states, collect activations $h^{(\ell)}_k$ on carefully constructed prompts in $D$, and:
+	\begin{itemize}[nosep]
+		\item train linear or shallow nonlinear probes to decode relevant quantities (e.g.\ energies, momenta, genotype frequencies) from $h^{(\ell)}_k$,
+		\item apply feature-extraction methods (e.g.\ sparse autoencoders) to discover latent directions associated with interpretable concepts,
+		\item identify attention heads and MLP components that are necessary for correct reasoning in $D$ via ablation and activation patching.
+	\end{itemize}
+	
+	This yields a family of internal features and circuits that appear to implement computations corresponding to aspects of $\mathcal{M}_D$ or $\hat{\mathcal{M}}_D$.
+	
+	\subsection{Step 4: Alignment Between External and Internal Models}
+	
+	Establish correspondences between elements of the explicit model $\hat{\mathcal{M}}_D$ and internal structures:
+	\begin{itemize}[nosep]
+		\item map concepts in $\hat{\mathcal{M}}_D$ to probe directions and feature vectors,
+		\item map laws or update rules to observed computation patterns across layers and heads,
+		\item test whether perturbing the internal representation of a concept or law yields the expected change in behavior within the explicit model.
+	\end{itemize}
+	
+	The goal is to obtain a functorial correspondence between:
+	\[
+	\text{(Category of internal circuits and features)} \;\longrightarrow\; \text{(Category of explicit domain models)}.
+	\]
+	
+	\subsection{Step 5: Information-Theoretic Formulation}
+	
+	From an information-theoretic perspective, let $C_D$ denote the (hypothetical) Kolmogorov complexity of an optimal world-model for domain $D$. The full LLM has a parameter description length $|\theta|$ that is vastly larger than $C_D$, because it models many domains and linguistic phenomena simultaneously.
+	
+	Define $K^*_{\mathrm{LLM}}(D)$ as the minimal description length of a distilled model plus external representation that:
+	\begin{itemize}[nosep]
+		\item reproduces the LLM's performance on tasks restricted to $D$ up to a specified tolerance,
+		\item is expressed in a chosen formal language (e.g.\ a proof assistant, a probabilistic programming language, or a DSL for dynamics).
+	\end{itemize}
+	
+	Estimating $K^*_{\mathrm{LLM}}(D)$ by compression and distillation experiments provides a quantitative measure of how much structured information about $D$ is encoded and how efficiently it can be externalized.
+	
+	\section{System Design and Pseudocode}
+	
+	We now describe a generic system architecture, implemented in Python, that:
+	\begin{itemize}[nosep]
+		\item interacts with an LLM via a generic interface (CLI tool or API),
+		\item performs behavioral interrogation to build a structured external model $\hat{\mathcal{M}}_D$,
+		\item optionally orchestrates mechanistic experiments for models with accessible internals.
+	\end{itemize}
+	
+	\subsection{System Components}
+	
+	\begin{enumerate}[label=\textbf{C\arabic*}, nosep]
+		\item \textbf{LLM Interface}: abstract class encapsulating how prompts are sent and responses received (CLI wrapper or HTTP API client).
+		\item \textbf{Domain Configuration}: specification of domain $D$, including prompt templates, parsing rules, and evaluation benchmarks.
+		\item \textbf{Interrogation Engine}: constructs prompts, queries the LLM, and collects raw textual responses.
+		\item \textbf{Structure Extractor}: parses responses into structured representations (graphs, axioms, causal models).
+		\item \textbf{Formalization Backend}: optional component that translates the structured representation into a formal language (e.g.\ Lean, Coq, a DSL).
+		\item \textbf{Evaluation Module}: evaluates the extracted model $\hat{\mathcal{M}}_D$ against ground-truth problems and criteria.
+		\item \textbf{Mechanistic Module (optional)}: hooks into local models to run probing and circuit analysis.
+	\end{enumerate}
+	
+	\subsection{Pseudocode}
+	
+	The following pseudocode is written in Python-like style but abstracts away implementation details (error handling, logging, concurrency, etc.). It is designed so that the \texttt{LLMInterface} can later be backed either by a CLI binary or by an API client.
+	
+	\begin{verbatim}
+		# -----------------------------
+		# Core abstractions
+		# -----------------------------
+		
+		from dataclasses import dataclass
+		from typing import List, Dict, Any, Optional
+		
+		class LLMInterface:
+		"""
+		Abstract interface to a language model.
+		
+		Implementations may call:
+		- a local CLI binary (e.g. via subprocess),
+		- a remote HTTP API,
+		- a local Python model in process.
+		"""
+		def generate(self, prompt: str, **kwargs) -> str:
+		raise NotImplementedError
+		
+		
+		@dataclass
+		class DomainConfig:
+		name: str
+		description: str
+		# Prompt templates for interrogation
+		concept_prompt_template: str
+		prereq_prompt_template: str
+		causal_prompt_template: str
+		axiom_prompt_template: str
+		# Evaluation problems and ground-truth solutions
+		benchmarks: List[Dict[str, Any]]
+		
+		
+		@dataclass
+		class StructuredModel:
+		"""
+		Externalized approximation to M_D extracted from the LLM.
+		"""
+		concepts: List[Dict[str, Any]]
+		concept_graph: Dict[str, List[str]]  # adjacency list: concept -> prerequisites
+		causal_graph: Dict[str, List[str]]   # variable -> parents
+		axioms: List[str]
+		metadata: Dict[str, Any]
+		
+		
+		# -----------------------------
+		# Interrogation Engine
+		# -----------------------------
+		
+		class InterrogationEngine:
+		def __init__(self, llm: LLMInterface, domain: DomainConfig):
+		self.llm = llm
+		self.domain = domain
+		
+		def _ask(self, template: str, **fields) -> str:
+		prompt = template.format(**fields)
+		return self.llm.generate(prompt)
+		
+		def collect_concepts(self) -> str:
+		return self._ask(self.domain.concept_prompt_template,
+		domain_description=self.domain.description)
+		
+		def collect_prerequisites(self, concept_list_str: str) -> str:
+		return self._ask(self.domain.prereq_prompt_template,
+		domain_description=self.domain.description,
+		concept_list=concept_list_str)
+		
+		def collect_causal_structure(self, concept_list_str: str) -> str:
+		return self._ask(self.domain.causal_prompt_template,
+		domain_description=self.domain.description,
+		concept_list=concept_list_str)
+		
+		def collect_axioms(self, concept_list_str: str) -> str:
+		return self._ask(self.domain.axiom_prompt_template,
+		domain_description=self.domain.description,
+		concept_list=concept_list_str)
+		
+		
+		# -----------------------------
+		# Structure Extraction
+		# -----------------------------
+		
+		class StructureExtractor:
+		"""
+		Converts raw textual responses into structured objects.
+		In practice, this will use parsing, pattern matching, and
+		possibly additional LLM calls for strict formatting.
+		"""
+		
+		def parse_concepts(self, raw_concepts: str) -> List[Dict[str, Any]]:
+		# Example: parse bullet lists "1. Name: description"
+		# Return list of { "name": ..., "description": ... }
+		raise NotImplementedError
+		
+		def build_concept_graph(self,
+		concepts: List[Dict[str, Any]],
+		raw_prereqs: str) -> Dict[str, List[str]]:
+		# Parse prerequisite relations from raw_prereqs and
+		# align them with the concept names.
+		raise NotImplementedError
+		
+		def build_causal_graph(self,
+		concepts: List[Dict[str, Any]],
+		raw_causal: str) -> Dict[str, List[str]]:
+		# Parse causal relations and align with concepts.
+		raise NotImplementedError
+		
+		def parse_axioms(self, raw_axioms: str) -> List[str]:
+		# Extract candidate axioms/laws from text.
+		raise NotImplementedError
+		
+		def assemble_model(self,
+		domain: DomainConfig,
+		raw_concepts: str,
+		raw_prereqs: str,
+		raw_causal: str,
+		raw_axioms: str) -> StructuredModel:
+		concepts = self.parse_concepts(raw_concepts)
+		concept_graph = self.build_concept_graph(concepts, raw_prereqs)
+		causal_graph = self.build_causal_graph(concepts, raw_causal)
+		axioms = self.parse_axioms(raw_axioms)
+		metadata = {
+			"domain_name": domain.name,
+			"description": domain.description
+		}
+		return StructuredModel(
+		concepts=concepts,
+		concept_graph=concept_graph,
+		causal_graph=causal_graph,
+		axioms=axioms,
+		metadata=metadata,
+		)
+		
+		
+		# -----------------------------
+		# Evaluation Module
+		# -----------------------------
+		
+		class Evaluator:
+		"""
+		Evaluates a StructuredModel using benchmark problems.
+		Benchmarks may be symbolic, numerical, or qualitative.
+		"""
+		
+		def __init__(self, domain: DomainConfig):
+		self.domain = domain
+		
+		def evaluate(self, model: StructuredModel) -> Dict[str, Any]:
+		results = []
+		for problem in self.domain.benchmarks:
+		# Example structure of a benchmark:
+		# { "type": "prediction", "input": ..., "expected": ... }
+		result = self._evaluate_single(problem, model)
+		results.append(result)
+		summary = self._aggregate(results)
+		return {"per_problem": results, "summary": summary}
+		
+		def _evaluate_single(self,
+		problem: Dict[str, Any],
+		model: StructuredModel) -> Dict[str, Any]:
+		# Use model.concepts, model.causal_graph, model.axioms to
+		# compute or infer an answer, then compare to expected.
+		raise NotImplementedError
+		
+		def _aggregate(self, results: List[Dict[str, Any]]) -> Dict[str, Any]:
+		# Compute summary statistics, e.g. accuracy, coverage.
+		raise NotImplementedError
+		
+		
+		# -----------------------------
+		# Optional: Mechanistic Module
+		# -----------------------------
+		
+		class MechanisticModule:
+		"""
+		For local models where internal activations are accessible,
+		orchestrate probing and circuit analysis experiments.
+		"""
+		
+		def __init__(self, local_model: Any):
+		self.model = local_model
+		
+		def collect_activations(self, prompts: List[str]) -> Any:
+		# Run model on prompts and record activations per layer.
+		raise NotImplementedError
+		
+		def train_probes(self, activations: Any,
+		labels: Any) -> Any:
+		# Train linear/shallow classifiers to decode domain quantities.
+		raise NotImplementedError
+		
+		def identify_circuits(self, activations: Any,
+		importance_metric: str = "ablation") -> Any:
+		# Identify attention heads/MLP units critical for domain tasks.
+		raise NotImplementedError
+		
+		
+		# -----------------------------
+		# High-level orchestration
+		# -----------------------------
+		
+		def extract_structured_model(llm: LLMInterface,
+		domain: DomainConfig) -> StructuredModel:
+		interrogator = InterrogationEngine(llm, domain)
+		extractor = StructureExtractor()
+		
+		raw_concepts = interrogator.collect_concepts()
+		raw_prereqs  = interrogator.collect_prerequisites(raw_concepts)
+		raw_causal   = interrogator.collect_causal_structure(raw_concepts)
+		raw_axioms   = interrogator.collect_axioms(raw_concepts)
+		
+		model = extractor.assemble_model(domain,
+		raw_concepts,
+		raw_prereqs,
+		raw_causal,
+		raw_axioms)
+		return model
+		
+		
+		def main():
+		# 1. Instantiate an LLM interface, e.g. CLI-based or API-based.
+		llm = SomeConcreteLLMInterface(...)
+		
+		# 2. Define the domain configuration.
+		domain = DomainConfig(
+		name="Classical Mechanics (Point Particles)",
+		description="Newtonian mechanics of point masses in R^3 "
+		"under smooth forces.",
+		concept_prompt_template=(
+		"You are an expert in {domain_description}.\n"
+		"List the fundamental concepts and quantities in this domain.\n"
+		"For each, give a brief definition."
+		),
+		prereq_prompt_template=(
+		"Given the following list of concepts in {domain_description}:\n"
+		"{concept_list}\n\n"
+		"For each concept, list which other concepts are prerequisites."
+		),
+		causal_prompt_template=(
+		"Given the following concepts in {domain_description}:\n"
+		"{concept_list}\n\n"
+		"Describe the key causal relationships between the associated "
+		"variables. Output a list of 'cause -> effect' relations."
+		),
+		axiom_prompt_template=(
+		"Given the concepts:\n"
+		"{concept_list}\n\n"
+		"Propose a minimal set of axioms or laws for "
+		"{domain_description} from which the others can be derived."
+		),
+		benchmarks=[
+		# Populate with domain-specific problems.
+		],
+		)
+		
+		# 3. Extract a structured model from the LLM.
+		structured_model = extract_structured_model(llm, domain)
+		
+		# 4. Evaluate the extracted model.
+		evaluator = Evaluator(domain)
+		evaluation_results = evaluator.evaluate(structured_model)
+		
+		# 5. (Optional) Save results, export to a formalization backend, etc.
+		save_structured_model(structured_model, path="mechanics_model.json")
+		save_evaluation(evaluation_results, path="mechanics_eval.json")
+		
+		
+		if __name__ == "__main__":
+		main()
+	\end{verbatim}
+	
+	The pseudocode above separates the concerns of:
+	\begin{itemize}[nosep]
+		\item interacting with an LLM (abstracted by \texttt{LLMInterface}),
+		\item interrogating the model using domain-specific prompts,
+		\item parsing and assembling structured external models,
+		\item evaluating these models against explicit benchmarks,
+		\item optionally, performing mechanistic experiments on local models.
+	\end{itemize}
+	Concrete implementations of the abstract methods can be developed incrementally, starting with simple text parsing and CLI-based interaction, and later upgraded to robust parsers, API-based interfaces, and mechanistic tooling.
+	
+\end{document}
