@@ -271,9 +271,8 @@ class OpenAIInterface(LLMInterface):
 
         # Import openai library if available
         try:
-            import openai
-            openai.api_key = api_key
-            self.openai = openai
+            from openai import OpenAI
+            self.client = OpenAI(api_key=api_key)
         except ImportError:
             raise ImportError("openai library not installed. Run: pip install openai")
 
@@ -281,7 +280,7 @@ class OpenAIInterface(LLMInterface):
         """Validate API key and connection."""
         try:
             # Try to list models
-            self.openai.Model.list()
+            self.client.models.list()
             return True
         except Exception:
             return False
@@ -296,7 +295,7 @@ class OpenAIInterface(LLMInterface):
 
         try:
             # Create chat completion
-            response = self.openai.ChatCompletion.create(
+            response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
                     {"role": "user", "content": prompt}
@@ -312,7 +311,11 @@ class OpenAIInterface(LLMInterface):
                 text=text,
                 metadata={
                     "model": self.model,
-                    "usage": response.usage.to_dict() if hasattr(response, 'usage') else {},
+                    "usage": {
+                        "prompt_tokens": response.usage.prompt_tokens,
+                        "completion_tokens": response.usage.completion_tokens,
+                        "total_tokens": response.usage.total_tokens
+                    } if response.usage else {},
                     "timestamp": time.time()
                 }
             )
