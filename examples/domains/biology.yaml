@@ -1,0 +1,110 @@
+domain:
+  name: "biology"
+  version: "1.0.0"
+  description: "Molecular biology, genetics, and cellular processes"
+
+# Focusing keywords for initial extraction
+focusing_keywords:
+  - "DNA"
+  - "RNA"
+  - "protein"
+  - "gene"
+  - "cell"
+  - "metabolism"
+  - "evolution"
+  - "mutation"
+  - "transcription"
+  - "translation"
+  - "replication"
+  - "enzyme"
+  - "pathway"
+  - "regulation"
+
+# Structured context patterns for biology
+context_patterns:
+  molecular_level: "Analyze molecular components and interactions"
+  cellular_level: "Examine cellular structures and processes"
+  systems_level: "Consider organism-level systems and functions"
+  evolutionary_perspective: "Include evolutionary context and relationships"
+
+# Processing parameters
+parameters:
+  max_concepts: 75
+  extraction_iterations: 3
+  confidence_threshold: 0.85
+  enable_causal_analysis: true
+  include_examples: true
+
+# Custom prompt templates for biology
+templates:
+  concept:
+    name: "biological_concept_discovery"
+    template: |
+      You are an expert in {domain_description}.
+
+      List the fundamental biological concepts and entities in this domain.
+      For each concept, provide:
+      1. Name (scientific term)
+      2. Definition (precise biological definition)
+      3. Key properties or characteristics
+      4. Biological function or role
+      5. Common examples in living systems
+
+      Focus on concepts that are:
+      - Fundamental to understanding life processes
+      - Experimentally observable or measurable
+      - Central to modern biological theory
+
+      Format your response as a numbered list.
+    variables:
+      - domain_description
+
+  causal:
+    name: "biological_causal_extraction"
+    template: |
+      Given these biological concepts in {domain_description}:
+
+      {concept_list}
+
+      Identify the causal and regulatory relationships between these concepts.
+      Consider:
+      - Metabolic pathways (substrate -> product)
+      - Gene regulation (regulator -> target gene)
+      - Signaling cascades (signal -> response)
+      - Information flow (DNA -> RNA -> Protein)
+
+      Format as: 'Cause -> Effect (mechanism)'
+      Example: 'Transcription factor -> Gene expression (binding to promoter)'
+    variables:
+      - domain_description
+      - concept_list
+
+# Benchmarks for validating extracted knowledge
+benchmarks:
+  - name: "central_dogma"
+    type: "derivation"
+    description: "Derive the central dogma of molecular biology"
+    input:
+      concepts: ["DNA", "RNA", "Protein"]
+      query: "What is the flow of genetic information?"
+    expected_output: "DNA -> RNA -> Protein"
+
+  - name: "gene_regulation"
+    type: "prediction"
+    description: "Predict effect of transcription factor"
+    input:
+      scenario: "Transcription factor binds to promoter"
+      question: "What happens to gene expression?"
+    expected_output: "Increased or decreased gene expression depending on activator/repressor"
+
+  - name: "mutation_effects"
+    type: "classification"
+    description: "Classify types of mutations"
+    input:
+      mutations: ["point", "frameshift", "deletion", "insertion"]
+      task: "Classify by effect on protein"
+    expected_output:
+      point: "May or may not affect protein"
+      frameshift: "Usually destroys protein function"
+      deletion: "Depends on size and location"
+      insertion: "Depends on size and location"

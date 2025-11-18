@@ -1,0 +1,76 @@
+domain:
+  name: "physics"
+  version: "1.0.0"
+  description: "Classical and quantum mechanics, fundamental forces and particles"
+
+focusing_keywords:
+  - "force"
+  - "energy"
+  - "momentum"
+  - "mass"
+  - "velocity"
+  - "acceleration"
+  - "quantum state"
+  - "wave function"
+  - "particle"
+  - "field"
+  - "conservation"
+  - "symmetry"
+  - "spacetime"
+
+context_patterns:
+  classical_mechanics: "Newtonian mechanics and macroscopic phenomena"
+  quantum_mechanics: "Quantum phenomena and microscopic behavior"
+  relativistic_physics: "Special and general relativity effects"
+  conservation_laws: "Identify conserved quantities and symmetries"
+
+parameters:
+  max_concepts: 100
+  extraction_iterations: 3
+  confidence_threshold: 0.9
+  include_mathematical_forms: true
+
+templates:
+  axiom:
+    name: "physics_axiom_extraction"
+    template: |
+      Given these physics concepts in {domain_description}:
+
+      {concept_list}
+
+      Propose fundamental physical laws and principles.
+      For each law:
+      1. State the law clearly
+      2. Provide mathematical expression (use LaTeX notation)
+      3. List physical quantities involved
+      4. Describe experimental validation
+      5. Note domain of applicability
+
+      Focus on:
+      - Conservation laws
+      - Fundamental equations of motion
+      - Symmetry principles
+      - Limiting cases and approximations
+    variables:
+      - domain_description
+      - concept_list
+
+benchmarks:
+  - name: "conservation_energy"
+    type: "derivation"
+    description: "Derive energy conservation from time symmetry"
+    input:
+      symmetry: "time translation invariance"
+      theorem: "Noether's theorem"
+    expected_output: "Energy conservation law"
+
+  - name: "projectile_motion"
+    type: "prediction"
+    description: "Predict projectile trajectory"
+    input:
+      initial_velocity: "v0"
+      angle: "theta"
+      gravity: "g"
+    expected_output:
+      range: "v0^2 * sin(2*theta) / g"
+      max_height: "v0^2 * sin^2(theta) / (2*g)"
